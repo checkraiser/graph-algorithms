@@ -24,16 +24,22 @@ class Graph
 	def get_color(v)
 		@color[v]
 	end
-	def edge?(mU, v, w)
-		return false if !mU.include?(v) or !mU.include?(w)
-		return true if @g[[v, w]] == true
+	def edge?(v, w)
+		return true if v == w
+		return true if @g[[v, w]] == true or @g[[w, v]] == true
 		return false
 	end
 	def assign_color(v, k)
 		@color[v] = k
 	end
 	def degree(mU, mv)
-		@g.select {|k,v| v == true and mU.include?(mv) and mU.include?(k[1])}.count
+		@g.select {|k,v| v == true and mv == k[0] and mU.include?(k[1])}.count
+	end
+	def adjacent?(mU, mv)
+		mU.to_a.each do |v|
+			if edge?(mv, v) then return true end
+		end
+		return false
 	end
 	def max_item_degree(mU, mV)
 		v_a = mV.to_a
@@ -48,33 +54,15 @@ class Graph
 		end
 		max_item
 	end
-	def get_u1(u)
-		res = Set.new
-		t = get_uncolored_nodes(u)
-		t.each do |v|
-			tmp = false
-			get_colored_nodes(u).each do |w|
-				if edge?(u, v, w)
-					tmp = true
-				end
-			end
-			if tmp == false
-				res.add(v)
-			end
-		end
-		res
+	def get_u1(mU)
+		t = get_uncolored_nodes(mU)
+		t2 = get_colored_nodes(mU)
+		Set.new(t.select {|i| !adjacent?(t2, i)})
 	end
-	def get_u2(u)
-		res = Set.new
-		t = get_uncolored_nodes(u)
-		t.each do |v|
-			get_colored_nodes(u).each do |w|
-				if edge?(u, v, w)
-					res.add(v)
-				end
-			end
-		end
-		res
+	def get_u2(mU)
+		t = get_uncolored_nodes(mU)
+		t2 = get_colored_nodes(mU)
+		Set.new(t.select {|i| adjacent?(t2, i)})
 	end
 
 	
@@ -85,24 +73,24 @@ class Graph
 		mU.select {|v| @color[v].nil? }
 	end
 	def color!
-		k = 0
-		u = get_uncolored_nodes(get_v)
-		u1 = get_u1(u)
-		u2 = get_u2(u)
+		k = 1
+		mU = @v
+		u1 = get_u1(mU)
+		u2 = get_u2(mU)
 		vi1 = max_item_degree(u2, u1)
-		assign_color(vi1, k+1)
+		assign_color(vi1, k)
 		@v.count.times do |t1|
-			k = k + 1
-			un = get_uncolored_nodes(get_v)
-			@v.count.times do |t|
-				al(un, k + 1)
+			while !get_u1(mU).empty?
+				al(mU, k)
 			end
+			k = k + 1
+			mU = get_uncolored_nodes(mU)
 		end
 	end
 	private
-	def al(u, k)
-		u1 = get_u1(u)
-		u2 = get_u2(u)
+	def al(mU, k)
+		u1 = get_u1(mU)
+		u2 = get_u2(mU)
 		unless u1.empty?
 			vi1 = max_item_degree(u2, u1)
 			assign_color(vi1, k)
@@ -113,13 +101,19 @@ end
 
 def test
 	graph = Graph.new
+	graph.add_edge(1, 2)
 	graph.add_edge(1, 3)
-	graph.add_edge(1, 4)
+	graph.add_edge(1, 5)
+	graph.add_edge(1, 6)
 	graph.add_edge(2, 4)
-	graph.add_edge(2, 5)
+	graph.add_edge(2, 6)
+	graph.add_edge(2, 7)
 	graph.add_edge(3, 4)
 	graph.add_edge(3, 6)
 	graph.add_edge(3, 5)
+	graph.add_edge(4, 6)
+	graph.add_edge(4, 7)
+	graph.add_edge(5, 7)
 	graph.color!
 	
 	puts graph.get_colors.inspect
