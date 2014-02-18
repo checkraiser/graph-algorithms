@@ -29,6 +29,31 @@ class Graph
 		return true if @g[[v, w]] == true or @g[[w, v]] == true
 		return false
 	end
+	
+	def color!
+		k = 1
+		mU = @v
+		u1 = get_u1(mU)
+		u2 = get_u2(mU)
+		vi1 = max_item_degree(u2, u1)
+		assign_color(vi1, k)
+		@v.count.times do |t1|
+			while !get_u1(mU).empty?
+				al(mU, k)
+			end
+			k = k + 1
+			mU = get_uncolored_nodes(mU)
+		end
+	end
+	private
+	def al(mU, k)
+		u1 = get_u1(mU)
+		u2 = get_u2(mU)
+		unless u1.empty?
+			vi1 = max_item_degree(u2, u1)
+			assign_color(vi1, k)
+		end	
+	end
 	def assign_color(v, k)
 		@color[v] = k
 	end
@@ -72,30 +97,6 @@ class Graph
 	def get_uncolored_nodes(mU)
 		mU.select {|v| @color[v].nil? }
 	end
-	def color!
-		k = 1
-		mU = @v
-		u1 = get_u1(mU)
-		u2 = get_u2(mU)
-		vi1 = max_item_degree(u2, u1)
-		assign_color(vi1, k)
-		@v.count.times do |t1|
-			while !get_u1(mU).empty?
-				al(mU, k)
-			end
-			k = k + 1
-			mU = get_uncolored_nodes(mU)
-		end
-	end
-	private
-	def al(mU, k)
-		u1 = get_u1(mU)
-		u2 = get_u2(mU)
-		unless u1.empty?
-			vi1 = max_item_degree(u2, u1)
-			assign_color(vi1, k)
-		end	
-	end
 end
 	
 
@@ -114,6 +115,7 @@ def test
 	graph.add_edge(4, 6)
 	graph.add_edge(4, 7)
 	graph.add_edge(5, 7)
+	graph.add_edge(5, 6)
 	graph.color!
 	
 	puts graph.get_colors.inspect
