@@ -86,6 +86,11 @@ class Graph
 	end
 	def color!
 		k = 0
+		u = get_uncolored_nodes(get_v)
+		u1 = get_u1(u)
+		u2 = get_u2(u)
+		vi1 = max_item_degree(u2, u1)
+		assign_color(vi1, k+1)
 		@v.count.times do |t1|
 			k = k + 1
 			un = get_uncolored_nodes(get_v)
@@ -108,14 +113,13 @@ end
 
 def test
 	graph = Graph.new
-	k = 1
 	graph.add_edge(1, 3)
 	graph.add_edge(1, 4)
 	graph.add_edge(2, 4)
 	graph.add_edge(2, 5)
 	graph.add_edge(3, 4)
 	graph.add_edge(3, 6)
-	graph.assign_color(1, 1)
+	graph.add_edge(3, 5)
 	graph.color!
 	
 	puts graph.get_colors.inspect
