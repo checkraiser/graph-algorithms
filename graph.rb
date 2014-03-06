@@ -34,12 +34,11 @@ class Graph
 		@color = Hash.new
 		process_edge!
 		@tmp = Hash.new # danh sach sinh vien da thi tai mau k
-		@slot = 4
-		@slot.times do |s|
-			puts s
-			@tmp[0-s] = Set.new
-		end
-
+		@slot = 1
+		@slot.times do |t|
+			@tmp[0-t] = Set.new
+		end		
+		@temp = Hash.new	
 	end
 	def get_edge
 		@g
@@ -65,33 +64,40 @@ class Graph
 		return true if @g[[v.id, w.id]] == true or @g[[w.id, v.id]] == true
 		return false
 	end
-	
-	def color!
-		k = 1
-		mU = @v
+	def colored?
+		@color.keys.count == @v.count
+	end
+	def color!		
+		al(@v, 1)				
+	end
+	def al(mU, k)
+		return true if colored?		
 		u1 = get_u1(mU, k)
-		u2 = get_u2(mU, k)
-		vi1 = max_item_degree(u2, u1)
-		assign_color(vi1, k)
-		@v.count.times do |t1|
-			puts "#{k}: " + get_colors.inspect
-			while !get_u1(mU, k).empty?
-				al(mU, k)
-			end
-			k = k + 1
-			mU = get_uncolored_nodes(mU, k)
+		u2 = get_u2(mU, k)		
+		if !u1.empty?
+			vi1 = max_item_degree(u2, u1)
+			assign_color(vi1, k)
+			al(mU, k)
+		else			
+			al(get_uncolored_nodes(mU, k+1), k+1)
 		end
 	end
 	def assign_color(v, k)
 		@color[v.id] = k
 		@tmp[k] ||= Set.new
-		@tmp[k] += v.svs
+		@tmp[k] += v.svs		
+		@temp[k] ||= Set.new	
+		@slot.times do |t|
+			@temp[k] = @temp[k] + @tmp[k-t]
+		end
+	end
+	def find_tmp_node(mU, k)
+		@temp[k] ||= Set.new		
+		Set.new(mU.select {|u| (u.svs & @temp[k]).empty?})
 	end
 	def get_degree(v)
 		degree(@v, v)
-	end
-	
-	
+	end		
 	def degree(mU, mv)
 		res = 0
 		if mU.empty?
@@ -103,7 +109,12 @@ class Graph
 		res
 	end
 	def get_temp(k)
-		@tmp[k]
+		if @tmp[k]
+			return @tmp[k]
+		else
+			@tmp[k] = Set.new
+			return @tmp[k]
+		end
 	end
 	def add_edge(v, w)
 		@g[[v.id, w.id]] = true
@@ -119,17 +130,7 @@ class Graph
 				end
 			end
 		end
-	end
-	def al(mU, k)
-		u1 = get_u1(mU, k)
-		u2 = get_u2(mU, k)
-		unless u1.empty?
-			vi1 = max_item_degree(u2, u1)
-			assign_color(vi1, k)
-		end	
-	end
-	
-	
+	end			
 	def adjacent?(mU, mv)
 		mU.to_a.each do |v|
 			if edge?(mv, v) then return true end
@@ -158,60 +159,26 @@ class Graph
 		t = get_uncolored_nodes(mU, k)
 		t2 = get_colored_nodes(mU)
 		Set.new(t.select {|i| adjacent?(t2, i)})
-	end
-
-	def get_past_tmp(k)
-		tmp = Set.new
-		@slot.times do |s|
-			tmp += get_temp(k - s)
-		end		
-		tmp
-	end
-	
+	end	
 	def get_colored_nodes(mU)
-		mU.select {|v| @color[v.id] != nil}
+		Set.new(mU.select {|v| @color[v.id] != nil})
 	end
 	def get_uncolored_nodes(mU, k)
-		mU.select {|v| @color[v.id].nil? } - get_uncolorded_tmp(mU, k)
+		Set.new(mU.select {|v| @color[v.id].nil?}) & find_tmp_node(mU, k)
 	end
-	def get_uncolorded_tmp(mU, k)
-
-		mU.select {|v| (v.svs & Set.new(get_past_tmp(k))).empty?}		
-	end
+	
 end
 	
 
 def test	
 	n1 = Node.new(1, Set.new([1,2,3]))
-	n2 = Node.new(2, Set.new([2,3,6]))
-	n3 = Node.new(3, Set.new([4,5]))
-	n4 = Node.new(4, Set.new([1, 5, 8]))
+	n2 = Node.new(2, Set.new([1,9,10]))
+	n3 = Node.new(3, Set.new([2,5,6, 11]))
+	n4 = Node.new(4, Set.new([1,7,8, 11]))
 	graph = Graph.new(Set.new([n1, n2, n3, n4]))	
-	#graph.color!
-#	graph.get
-	graph.assign_color(n1, 1)
-	graph.assign_color(n3, 2)
-	puts graph.get_temp(2).inspect
-	puts graph.get_past_tmp(2).inspect
-	#puts graph.get_colors.inspect
-=begin	
-	graph.add_edge(Node.new(1), Node.new(2))
-	graph.add_edge(Node.new(1), Node.new(3))
-	graph.add_edge(Node.new(1), Node.new(5))
-	graph.add_edge(Node.new(1), Node.new(6))
-	graph.add_edge(Node.new(2), Node.new(4))
-	graph.add_edge(Node.new(2), Node.new(6))
-	graph.add_edge(Node.new(2), Node.new(7))
-	graph.add_edge(Node.new(3), Node.new(4))
-	graph.add_edge(Node.new(3), Node.new(6))
-	graph.add_edge(Node.new(3), Node.new(5))
-	graph.add_edge(Node.new(4), Node.new(6))
-	graph.add_edge(Node.new(4), Node.new(7))
-	graph.add_edge(Node.new(5), Node.new(7))
-	graph.add_edge(Node.new(5), Node.new(6))
 	graph.color!
-=end	
-	#graph.color!
-	#puts graph.get_colors.inspect
+	puts graph.get_colors.inspect	
 end
 test
+
+
