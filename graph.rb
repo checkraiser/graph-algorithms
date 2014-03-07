@@ -96,7 +96,7 @@ class Graph
 		@tmp[k] += Set.new(v.svs)		
 	end
 	def can_assign?(v, k)
-		slot = [3, (v.so_tin_chi * 1.5).ceil].max
+		slot = [3,(v.so_tin_chi * 1.5).ceil].min
 		(k-slot+1..k).each do |t|
 			@tmp[t] ||= Set.new
 			return false if !(v.svs & @tmp[t]).empty?
