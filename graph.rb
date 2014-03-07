@@ -1,9 +1,10 @@
 require 'set'
 class Node
 	# id: id trong database		
-	attr_accessor :id, :svs, :hinh_thuc
-	def initialize(id, svs, ht = nil)
+	attr_accessor :id, :svs, :hinh_thuc, :so_tin_chi
+	def initialize(id, svs, stc, ht = nil)
 		self.id = id
+		self.so_tin_chi = stc
 		self.svs = svs || Set.new
 		self.hinh_thuc = ht
 	end
@@ -34,10 +35,7 @@ class Graph
 		@color = Hash.new
 		process_edge!
 		@tmp = Hash.new # danh sach sinh vien da thi tai mau k
-		@slot = 1
-		@slot.times do |t|
-			@tmp[0-t] = Set.new
-		end		
+		
 		@temp = Hash.new	
 	end
 	def get_edge
@@ -70,6 +68,16 @@ class Graph
 	def color!		
 		al(@v, 1)				
 	end
+	def so_sinh_vien(k)
+		ids = []
+		tmp = @color.each do |k2, v|
+			if v == k 
+				ids << k2
+			end
+		end		
+		v = @v.select {|v1| ids.include?(v1.id)}
+		Set.new(v.inject([]) {|res, elem| res + elem.svs.to_a}).to_a.count
+	end
 	def al(mU, k)
 		return true if colored?		
 		u1 = get_u1(mU, k)
@@ -85,15 +93,15 @@ class Graph
 	def assign_color(v, k)
 		@color[v.id] = k
 		@tmp[k] ||= Set.new
-		@tmp[k] += v.svs		
-		@temp[k] ||= Set.new	
-		@slot.times do |t|
-			@temp[k] = @temp[k] + @tmp[k-t]
-		end
+		@tmp[k] += Set.new(v.svs)		
 	end
-	def find_tmp_node(mU, k)
-		@temp[k] ||= Set.new		
-		Set.new(mU.select {|u| (u.svs & @temp[k]).empty?})
+	def can_assign?(v, k)
+		slot = [3, (v.so_tin_chi * 1.5).ceil].max
+		(k-slot+1..k).each do |t|
+			@tmp[t] ||= Set.new
+			return false if !(v.svs & @tmp[t]).empty?
+		end
+		return true
 	end
 	def get_degree(v)
 		degree(@v, v)
@@ -153,7 +161,7 @@ class Graph
 	def get_u1(mU, k)
 		t = get_uncolored_nodes(mU, k)
 		t2 = get_colored_nodes(mU)
-		Set.new(t.select {|i| !adjacent?(t2, i)})
+		Set.new(t.select {|i| !adjacent?(t2, i)}.select {|m| can_assign?(m, k)})
 	end
 	def get_u2(mU, k)
 		t = get_uncolored_nodes(mU, k)
@@ -164,21 +172,22 @@ class Graph
 		Set.new(mU.select {|v| @color[v.id] != nil})
 	end
 	def get_uncolored_nodes(mU, k)
-		Set.new(mU.select {|v| @color[v.id].nil?}) & find_tmp_node(mU, k)
+		Set.new(mU.select {|v| @color[v.id].nil?})
 	end
 	
 end
-	
 
+	
+=begin
 def test	
 	n1 = Node.new(1, Set.new([1,2,3]))
 	n2 = Node.new(2, Set.new([1,9,10]))
 	n3 = Node.new(3, Set.new([2,5,6, 11]))
-	n4 = Node.new(4, Set.new([1,7,8, 11]))
+	n4 = Node.new(4, Set.new([1,7,8, 11]))	
 	graph = Graph.new(Set.new([n1, n2, n3, n4]))	
 	graph.color!
 	puts graph.get_colors.inspect	
 end
 test
-
+=end
 
